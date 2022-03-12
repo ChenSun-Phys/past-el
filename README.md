@@ -27,4 +27,4 @@ I did not set any default keybinding. In my use, I like binding it to `Hyper-i`.
 In this case, `H-i` inserts the plot together with the `figure` environment wrapping, while invoking it with a prefix such as `C-- H-i` only inserts the line of `includegraphics`. 
 
 # Acknowledgement
-Thanks to `bpalmer` and `wasamasa` from `#emacs`.
+I appreciate `bpalmer` and `wasamasa` from `#emacs` for the help.
