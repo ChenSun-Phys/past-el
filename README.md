@@ -2,14 +2,17 @@
 This is an elisp code to paste figures directly into a TeX file inside `Emacs`. A typical workflow is as follows, while having `xournalpp`  (or any other drawing app) open:
 
 1. sketch inside `xournalpp` and copy the sketch 
-3. switch back to the TeX file and invoke `tex-paste-figure`
-6. type in figure name after the prompt
+1. switch back to the TeX file and invoke `tex-paste-figure`
+1. type in figure name after the prompt
 
 # Demo
 ![demo gif](./demo/demo.gif)
 
 # Prerequsite
 `xclip`
+
+# How it works
+After copying the sketch into the clipboard, `tex-paste-figure` invokes `xclip` and creates a png file inside `./drawings`. It saves the image inside the clipboard into the png file, then cites the file using `inclugraphics` at the point of the tex file.
 
 # Debug
 I tested with `xournalpp`, but I do not see any problem to substitute this as anything else that copy a figure into the `X11` clipboard. To make sure the tool is compatible, copy whatever you want to paste, and check with the following `xclip` command
