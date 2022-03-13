@@ -9,7 +9,7 @@ This is an elisp code grabs a figure from {clipboard| screen selection}, save it
 ## xournalpp -> latex
 ![demo gif](./demo/demo.gif)
 
-## screenshot -> org
+## xournalpp/file path/screenshot -> org
 ![demo gif](./demo/drawings/org_demo.png)
 
 # Prerequsite
