@@ -17,7 +17,7 @@ This is an elisp code grabs a figure from {clipboard| screen selection}, save it
 
 # How it works
 ## Paste of image in clipboard `pastel-figure`
-After copying the sketch into the clipboard, `pastel-figure` invokes `xclip` and creates a png file inside `./drawings`. It saves the image inside the clipboard into a png file, then refers to the file using `inclugraphics` at the point of the tex file.
+After copying the sketch into the clipboard, `pastel-figure` invokes `xclip` and creates a png file inside `./drawings`. It saves the image inside the clipboard into a png file, then refers to the file using `inclugraphics` at the point of the tex file or bracket reference for org file.
 
 ## Paste image with its path in clipboard `pastel-file`
 It saves the image into `./drawings` folder, and adds reference to the image. 
