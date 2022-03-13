@@ -89,10 +89,25 @@
 ;;
 ;; sentinels for pastel-figure
 ;;
-(defun pastel-sentinel (process event)
-  (when (memq (princ major-mode) '(org-mode))
-      (org-display-inline-images))
+(defun pastel-figure-sentinel (process event)
+  ;; to be safe, it's run only after receiving the exit signal
+  (when (memq (process-status process) '(exit signal))
+    (when (memq (princ major-mode) '(org-mode))
+      (org-display-inline-images)))
   )
+
+;; the following needs to be wrapped by let,
+;; since it needs filename retrieved from filter
+
+;; (defun pastel-file-sentinel (process event)
+;;   (when (memq (process-status process) '(exit signal))
+;;     (when (memq (princ major-mode) '(org-mode))
+;;       (pastel-insert-fig-org filename))
+;;     (when (memq (princ major-mode) '(latex-mode))
+;;       (pastel-insert-fig-tex filename)))  
+;;   ;; (when (memq (princ major-mode) '(org-mode))
+;;   ;;     (org-display-inline-images))
+;;   )
 
 ;;
 ;; the user interface
@@ -115,13 +130,41 @@
     			    (let* ((coding-system-for-write 'raw-text))
     			      (write-region chunk nil file 'append 'silent)))		  
                   :stderr log-buffer
-                  :sentinel 'pastel-sentinel)		  
+                  :sentinel 'pastel-figure-sentinel)		  
 		  ;; :connection-type 'pipe
 		  ;; :stderr (make-pipe-process :name "dd test null" :filter #'ignore))		  
     (when (memq (princ major-mode) '(org-mode))
       (pastel-insert-fig-org file))
     (when (memq (princ major-mode) '(latex-mode))
       (pastel-insert-fig-tex file))    
+    )
+  )
+
+
+(defun pastel-file ()
+  "Make a figure using path in clipboard."
+  (interactive)  
+  (let* ((filename nil)
+	 (log-buffer (get-buffer-create "*pastel-log*")))
+    
+    (defun pastel-file-sentinel (process event)
+      (when (memq (process-status process) '(exit signal))
+	(when (memq (princ major-mode) '(org-mode))
+	  (pastel-insert-fig-org filename)
+	  (org-display-inline-images))
+	(when (memq (princ major-mode) '(latex-mode))
+	  (pastel-insert-fig-tex filename))))
+    
+    (make-process :name "xclip"
+                  ;; :buffer output-buffer		  
+    		  :coding 'raw-text		  
+                  :command (list "xclip" "-select" "clipboard" "-t" "TEXT" "-o")
+    		  :filter (lambda (_proc chunk)
+    			    (let* ((coding-system-for-write 'raw-text))
+			      (setq filename chunk)
+			      ))		  
+                  :stderr log-buffer
+                  :sentinel 'pastel-file-sentinel)		  
     )
   )
 
@@ -167,6 +210,7 @@ the screen."
   (let ((pastel--keybindings
          `(;; Brightness
            (,(kbd "H-y") . ,(function pastel-figure))
+           (,(kbd "H-Y") . ,(function pastel-file))	   
 	   (,(kbd "H-o") . ,(function pastel-screenshot-part))))
         (map (make-sparse-keymap)))
     (dolist (keybinding pastel--keybindings)
@@ -186,10 +230,8 @@ the screen."
 (provide 'pastel)
 
 
-;; DONE: deine a minor mode and keybinding
-
 ;; input
-;; TODO take file absolute path, (later paste copies it to the drawing folder)
+;; DONE take file absolute path, (later paste copies it to the drawing folder)
 ;; DONE take screen region (saves to drawing folder)
 ;; DONE take xournalpp handwriting copy
 
@@ -197,10 +239,9 @@ the screen."
 ;; DONE: org-mode insert
 ;; DONE latex insert 
 
+;; misc
+;; DONE: deine a minor mode and keybinding
 ;; DONE: change module name to pastel
-
 ;; DONE: keybinding H-o H-y 
-
 ;; TODO: if supplied with a file name use file name, otherwise time stamp
-
-;; TODO: acknowledge pjb
+;; DONE: acknowledge pjb

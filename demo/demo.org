@@ -1,13 +1,21 @@
 This is an org file to demonstrate past.el
 
-* title
-** subtitle
-Nulla ac nisl. Nullam urna nulla, ullamcorper in, interdum sit amet, gravida ut, risus.
-Aenean ac enim. In luctus. Phasellus eu quam vitae turpis viverra pellentesque. Duis
-feugiat felis ut enim. Phasellus pharetra, sem id porttitor sodales, magna nunc aliquet
-nibh, nec blandit nisl mauris at pede. Suspendisse risus risus, lobortis eget, semper at,
-imperdiet sit amet, quam. Quisque scelerisque dapibus nibh. Nam enim. Lorem ipsum
-dolor sit amet, consectetuer adipiscing elit. Nunc ut metus. Ut metus justo, auctor at,
-ultrices eu, sagittis ut, purus. Aliquam aliquam.
+* Simple usage
+** paste figure
+- copy handwriting in xournalpp
+- paste it inside an org file or tex file with pastel-figure, or use H-y
+- type the name for the figure when prompted
 
 [[./drawings/testorg.png][testorg]]
+
+** paste file:
+- copy the path to a figure file
+- run pastel-file or use H-Y
+
+[[./drawings/testorg.png][testorg]]
+
+** take screen shot:
+- inside an org file or tex file, invoke pastel-screenshot-part or use H-o
+- use mouse to select a rectangle of the screen
+- type up figure name when prompted
+[[./drawings/screenshot.png][screenshot]]
