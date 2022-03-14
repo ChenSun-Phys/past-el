@@ -17,6 +17,7 @@
 
 (makunbound 'pastel-graphics-string-tex)
 (makunbound 'pastel-figure-string-tex)
+(makunbound 'pastel-figure-string-org)
 
 (defvar pastel-graphics-string-tex "\n    \\includegraphics[width=.8\\textwidth]{%s/%s.png}"
   "Default latex insert for the graphics. Used inside a figure environment")
@@ -29,7 +30,10 @@
 \\end{figure}\n"
   "Default latex insert for the full figure.")
 
-(defvar pastel-figure-string-org "[[%s/%s][%s]]"
+(defvar pastel-figure-string-org "\n#+ATTR_HTML: :width 500px
+#+ATTR_LATEX: :width .8\\linewidth
+#+ATTR_ORG: :width 500
+[[%s/%s]]"
   "Default org insert for the figure.")
 
 ;; debug checks
