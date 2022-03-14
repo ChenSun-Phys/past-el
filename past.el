@@ -10,7 +10,7 @@
 
 
 ;;
-;; the tex strings
+;; the strings to be inserted
 ;;
 (defvar pastel-fig-dir "drawings"
   "Default image directory.")
@@ -30,8 +30,12 @@
 \\end{figure}\n"
   "Default latex insert for the full figure.")
 
-(defvar pastel-figure-string-org "\n#+ATTR_HTML: :width 500px
+(defvar pastel-figure-string-org "\n:IMAGE_INFO:
+#+NAME: 
+#+CAPTION: 
+#+ATTR_HTML: :width 500px
 #+ATTR_LATEX: :width .8\\linewidth
+:END:
 #+ATTR_ORG: :width 500
 [[%s/%s]]"
   "Default org insert for the figure.")
@@ -41,6 +45,22 @@
 ;; (eval (format pastel-figure-string-tex "1" "2" "3"))
 ;; (let ((test (file-name-sans-extension "abc.test")))
 ;;   (message test))
+
+
+
+;;
+;; related to org mode
+;;
+(defun pastel-org-preprocess-drawers (_)
+  (let ((img-drws (reverse (org-element-map (org-element-parse-buffer)
+                   'drawer (lambda (drw)
+                     (when
+                         (string= "IMAGE_INFO" (org-element-property :drawer-name drw)) drw))))))
+    (cl-loop for drw in img-drws do
+         (setf (buffer-substring (org-element-property :begin drw) (org-element-property :end drw))
+           (buffer-substring (org-element-property :contents-begin drw) (org-element-property :contents-end drw))))))
+
+(add-hook 'org-export-before-processing-hook 'pastel-org-preprocess-drawers)
 
 
 ;;
@@ -68,14 +88,6 @@
 
 (defun pastel-insert-fig-org (file)
   "Insert file into org"
-  ;; (let* (())
-  ;;   (message dname)
-  ;;   (message (format "current-prefix-arg: %s" current-prefix-arg))
-  ;;   ;; (insert ltex)
-  ;;   (if current-prefix-arg
-  ;;   	(insert ltex_graph)
-  ;;     (insert ltex))
-  ;;   )
   (let* ((fdir_full (expand-file-name pastel-fig-dir default-directory))
 	 (fdir (file-relative-name fdir_full default-directory))
          (dname (file-name-directory file))
@@ -112,6 +124,45 @@
 ;;   ;; (when (memq (princ major-mode) '(org-mode))
 ;;   ;;     (org-display-inline-images))
 ;;   )
+
+;;
+;; some enhancement of org mode
+;;
+;; function that automatically update equation \tags
+;; taken from https://stackoverflow.com/questions/26090651/emacs-org-mode-increment-equation-numbers-with-latex-preview
+(defun pastel-update-tag ()
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((count 1))
+      (while (re-search-forward "\\\\tag{\\([0-9]+\\)}" nil t)
+        (replace-match (format "%d" count) nil nil nil 1)
+        (setq count (1+ count)))))
+  )
+
+
+;; function that automatically remvoe equation \tags
+;; used before exporting to latex
+(defun pastel-remove-tag (_)
+  (save-excursion
+    ;; those \tags after \begin{align}
+    (goto-char (point-min))
+    (while (re-search-forward "\\(\\\\tag{[0-9]+}
+\\\\end{\\)" nil t)
+      (princ (match-string 1))
+      (replace-match "
+\\\\end{" nil nil nil 1))
+    ;; those \tags before \end{align}
+    (goto-char (point-min))    
+    (while (re-search-forward "\\(\\\\tag{[0-9]+}
+\\)" nil t)
+      (princ (match-string 1))
+      (replace-match "" nil nil nil 1))    
+    ))
+(add-hook 'org-export-before-processing-hook 'pastel-remove-tag)
+;; known issue: this remove the tag even when being exported to html
+;; this is not intended. It is only intended for latex export.
+;; remove it if you want to export to html
 
 ;;
 ;; the user interface
@@ -203,6 +254,13 @@ the screen."
   )
 
 
+;; function that can be used inside org-mode
+;; to automatically update \tag{#} and toggle inline display of eqns.
+(defun pastel-display-eqs ()
+  (interactive)
+  (pastel-update-tag)
+  (org-toggle-latex-fragment)
+)
 
 
 ;;
@@ -215,7 +273,8 @@ the screen."
          `(;; Brightness
            (,(kbd "H-y") . ,(function pastel-figure))
            (,(kbd "H-Y") . ,(function pastel-file))	   
-	   (,(kbd "H-o") . ,(function pastel-screenshot-part))))
+	   (,(kbd "H-o") . ,(function pastel-screenshot-part))
+	   (,(kbd "H-l") . ,(function pastel-display-eqs))))
         (map (make-sparse-keymap)))
     (dolist (keybinding pastel--keybindings)
       (define-key map (car keybinding) (cdr keybinding)))
@@ -233,6 +292,13 @@ the screen."
 
 (provide 'pastel)
 
+;;
+;; to use inside LaTeX and org mode, simply add to the corresponding hooks
+;;
+;; (add-hook 'LaTeX-mode-hook 'pastel-mode)
+;; (add-hook 'org-mode-hook 'pastel-mode)
+
+;; Milestones
 
 ;; input
 ;; DONE take file absolute path, (later paste copies it to the drawing folder)
@@ -249,3 +315,12 @@ the screen."
 ;; DONE: keybinding H-o H-y 
 ;; TODO: if supplied with a file name use file name, otherwise time stamp
 ;; DONE: acknowledge pjb
+
+;; org mode enhancement
+;; TODO: add those snippets into org mode folder automatically
+;; DONE: add latex snippets into org mode
+;; DONE: auto update tag
+;; DONE: add key binding to update tag then toggle inline
+;; DONE: remove \tag{} before export to latex
+;; TODO: auto toggle equations (ref: https://ivanaf.com/automatic_latex_fragment_toggling_in_org-mode.html)
+
