@@ -31,7 +31,7 @@
   "Default latex insert for the full figure.")
 
 (defvar pastel-figure-string-org "\n:IMAGE_INFO:
-#+NAME: 
+#+NAME: %s
 #+CAPTION: 
 #+ATTR_HTML: :width 500px
 #+ATTR_LATEX: :width .8\\linewidth
@@ -48,9 +48,15 @@
 
 
 
+
+
+
+
+
 ;;
 ;; related to org mode
 ;;
+;; reverse needed b/c this method is based on buffer position
 (defun pastel-org-preprocess-drawers (_)
   (let ((img-drws (reverse (org-element-map (org-element-parse-buffer)
                    'drawer (lambda (drw)
@@ -58,9 +64,77 @@
                          (string= "IMAGE_INFO" (org-element-property :drawer-name drw)) drw))))))
     (cl-loop for drw in img-drws do
          (setf (buffer-substring (org-element-property :begin drw) (org-element-property :end drw))
-           (buffer-substring (org-element-property :contents-begin drw) (org-element-property :contents-end drw))))))
+	       (buffer-substring (org-element-property :contents-begin drw) (org-element-property :contents-end drw))))))
 
+
+;; some enhancement of org mode
+;; function that automatically update equation \tags
+;; taken from https://stackoverflow.com/questions/26090651/emacs-org-mode-increment-equation-numbers-with-latex-preview
+(defun pastel-update-tag ()
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((count 1))
+      (while (re-search-forward "\\\\tag{\\([0-9]+\\)}" nil t)
+        (replace-match (format "%d" count) nil nil nil 1)
+        (setq count (1+ count)))))
+  )
+
+
+;; function that automatically remvoe equation \tags
+;; used before exporting to latex
+(defun pastel-remove-tag (_)
+  (save-excursion
+;;     ;; those \tags after \begin{align}
+;;     (goto-char (point-min))
+;;     (while (re-search-forward "\\(\\\\tag{[0-9]+}
+;; \\\\end{\\)" nil t)
+;;       (princ (match-string 1))
+;;       (replace-match "
+;; \\\\end{" nil nil nil 1))
+
+    ;; those \tags residing a single line
+    (goto-char (point-min))
+    (while (re-search-forward "\\(^\\\\tag{[0-9]+}
+\\)" nil t)
+      (princ (match-string 1))
+      (replace-match "" nil nil nil 1))
+
+    ;; the \tags mixed with other stuff
+    (goto-char (point-min))
+    (while (re-search-forward "\\(\\\\tag{[0-9]+}\\)" nil t)
+      (princ (match-string 1))
+      (replace-match "" nil nil nil 1))
+    
+;;     ;; those \tags before \end{align}
+;;     (goto-char (point-min))    
+;;     (while (re-search-forward "\\(\\\\tag{[0-9]+}
+;; \\)" nil t)
+;;       (princ (match-string 1))
+;;       (replace-match "" nil nil nil 1))
+    
+    ))
+(add-hook 'org-export-before-processing-hook 'pastel-remove-tag)
+;; this remove the tag even when being exported to html
+;; this is not intended. It is only intended for latex export.
+;; However, with org-ref installed, I do not see any problem in the
+;; exported html file
+
+;; org hooks
 (add-hook 'org-export-before-processing-hook 'pastel-org-preprocess-drawers)
+
+;; recommend adding the following to init.el
+;; (add-hook 'org-mode-hook 'latex-math-mode)
+;; (setq org-startup-with-inline-images t)
+;; (setq org-startup-with-latex-preview t)
+;; (setq org-pretty-entities t)
+;; (setq TeX-insert-braces nil)
+
+
+
+
+
+
 
 
 ;;
@@ -94,7 +168,7 @@
          (fname (file-name-nondirectory file))
          (name (file-name-sans-extension fname))
          (caption (downcase name))
-         (orgstr (format pastel-figure-string-org
+         (orgstr (format pastel-figure-string-org fname
 			 (concat "./" fdir) fname caption)))
     (message dname)
     (insert orgstr)
@@ -125,44 +199,12 @@
 ;;   ;;     (org-display-inline-images))
 ;;   )
 
-;;
-;; some enhancement of org mode
-;;
-;; function that automatically update equation \tags
-;; taken from https://stackoverflow.com/questions/26090651/emacs-org-mode-increment-equation-numbers-with-latex-preview
-(defun pastel-update-tag ()
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (let ((count 1))
-      (while (re-search-forward "\\\\tag{\\([0-9]+\\)}" nil t)
-        (replace-match (format "%d" count) nil nil nil 1)
-        (setq count (1+ count)))))
-  )
 
 
-;; function that automatically remvoe equation \tags
-;; used before exporting to latex
-(defun pastel-remove-tag (_)
-  (save-excursion
-    ;; those \tags after \begin{align}
-    (goto-char (point-min))
-    (while (re-search-forward "\\(\\\\tag{[0-9]+}
-\\\\end{\\)" nil t)
-      (princ (match-string 1))
-      (replace-match "
-\\\\end{" nil nil nil 1))
-    ;; those \tags before \end{align}
-    (goto-char (point-min))    
-    (while (re-search-forward "\\(\\\\tag{[0-9]+}
-\\)" nil t)
-      (princ (match-string 1))
-      (replace-match "" nil nil nil 1))    
-    ))
-(add-hook 'org-export-before-processing-hook 'pastel-remove-tag)
-;; known issue: this remove the tag even when being exported to html
-;; this is not intended. It is only intended for latex export.
-;; remove it if you want to export to html
+
+
+
+
 
 ;;
 ;; the user interface
@@ -208,7 +250,11 @@
 	  (pastel-insert-fig-org filename)
 	  (org-display-inline-images))
 	(when (memq (princ major-mode) '(latex-mode))
-	  (pastel-insert-fig-tex filename))))
+	  (pastel-insert-fig-tex filename))
+	;; actually copy the figure
+	(copy-file filename (concat "./drawings/" (file-name-nondirectory filename)))
+	;;
+	))
     
     (make-process :name "xclip"
                   ;; :buffer output-buffer		  
@@ -217,6 +263,7 @@
     		  :filter (lambda (_proc chunk)
     			    (let* ((coding-system-for-write 'raw-text))
 			      (setq filename chunk)
+			      (message (format "file name is %s" filename))
 			      ))		  
                   :stderr log-buffer
                   :sentinel 'pastel-file-sentinel)		  
@@ -242,7 +289,7 @@ the screen."
     ;; (start-process-shell-command "pastel-screenshot" log-buffer pastel-screenshot-partial-command)
     (make-process :name "pastel-scrot"
     		  :coding 'raw-text		  
-                  :command (list "scrot" "/tmp/%F_%T_$wx$h.png" "-s" "-e" "xclip -selection clipboard -target image/png -i $f")
+                  :command (list "scrot" "/tmp/%F_%T_$wx$h.png" "-sf" "-e" "xclip -selection clipboard -target image/png -i $f")
 		  :sentinel (lambda (process event)
 		  	      (when (memq (process-status process) '(exit signal))
 		  		(call-interactively 'pastel-figure)))
@@ -258,9 +305,11 @@ the screen."
 ;; to automatically update \tag{#} and toggle inline display of eqns.
 (defun pastel-display-eqs ()
   (interactive)
-  (pastel-update-tag)
-  (org-toggle-latex-fragment)
-)
+  (if current-prefix-arg
+      (progn (pastel-update-tag)
+	     (let ((current-prefix-arg '(16)))
+	       (call-interactively 'org-toggle-latex-fragment)))
+    (call-interactively 'org-toggle-latex-fragment)))
 
 
 ;;
@@ -323,4 +372,5 @@ the screen."
 ;; DONE: add key binding to update tag then toggle inline
 ;; DONE: remove \tag{} before export to latex
 ;; TODO: auto toggle equations (ref: https://ivanaf.com/automatic_latex_fragment_toggling_in_org-mode.html)
-
+;; TODO: add docstring
+;; TODO: add cellphone support: remotely turn on cellphone camera, capture part of the notebook, then crop on computer screen and insert to org-mode
