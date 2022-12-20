@@ -12,19 +12,19 @@
 ;;
 ;; the strings to be inserted
 ;;
-(defvar pastel-fig-dir "drawings"
+(defvar pastel-fig-dir "plots"
   "Default image directory.")
 
 (makunbound 'pastel-graphics-string-tex)
 (makunbound 'pastel-figure-string-tex)
 (makunbound 'pastel-figure-string-org)
 
-(defvar pastel-graphics-string-tex "\n    \\includegraphics[width=.8\\textwidth]{%s/%s.png}"
+(defvar pastel-graphics-string-tex "\n    \\includegraphics[width=.8\\textwidth]{%s/%s}"
   "Default latex insert for the graphics. Used inside a figure environment")
 
 (defvar pastel-figure-string-tex "\n\\begin{figure}[ht]
     \\centering
-    \\includegraphics[width=.8\\textwidth]{%s/%s.png}
+    \\includegraphics[width=.8\\textwidth]{%s/%s}
     \\label{fig:%s}
     \\caption{}
 \\end{figure}\n"
@@ -252,7 +252,7 @@
 	(when (memq (princ major-mode) '(latex-mode))
 	  (pastel-insert-fig-tex filename))
 	;; actually copy the figure
-	(copy-file filename (concat "./drawings/" (file-name-nondirectory filename)))
+	(copy-file filename (concat "./plots/" (file-name-nondirectory filename)))
 	;;
 	))
     
