@@ -12,12 +12,13 @@
 ;;
 ;; the strings to be inserted
 ;;
-(defvar pastel-fig-dir "plots"
-  "Default image directory.")
-
+(makunbound 'pastel-fig-dir)
 (makunbound 'pastel-graphics-string-tex)
 (makunbound 'pastel-figure-string-tex)
 (makunbound 'pastel-figure-string-org)
+
+(defvar pastel-fig-dir "plots"
+  "Default image directory.")
 
 (defvar pastel-graphics-string-tex "\n    \\includegraphics[width=.8\\textwidth]{%s/%s}"
   "Default latex insert for the graphics. Used inside a figure environment")
