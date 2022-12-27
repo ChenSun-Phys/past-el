@@ -290,7 +290,7 @@ the screen."
     ;; (start-process-shell-command "pastel-screenshot" log-buffer pastel-screenshot-partial-command)
     (make-process :name "pastel-scrot"
     		  :coding 'raw-text		  
-                  :command (list "scrot" "/tmp/%F_%T_$wx$h.png" "-sf" "-e" "xclip -selection clipboard -target image/png -i $f")
+                  :command (list "scrot" "/tmp/%F_%T_$wx$h.png" "-s" "-f" "-e" "xclip -selection clipboard -target image/png -i $f")
 		  :sentinel (lambda (process event)
 		  	      (when (memq (process-status process) '(exit signal))
 		  		(call-interactively 'pastel-figure)))
